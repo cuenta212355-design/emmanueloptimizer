@@ -1,0 +1,61 @@
+<!DOCTYPE html>
+<html lang="es"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1"><meta name="robots" content="noindex">
+<title>Panel de ofertas · Emmanuel Optimizer</title>
+<link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,500..800&family=Figtree:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+:root{--bg:#08070d;--s:#14111f;--ln:rgba(255,255,255,.1);--pu:#8b5cf6;--gr:#3dffa0;--tx:#f5f4fb;--mu:#a09db8}
+*{box-sizing:border-box;margin:0;padding:0}body{background:radial-gradient(60% 40% at 80% 0,rgba(139,92,246,.25),transparent 70%),var(--bg);color:var(--tx);font:400 16px/1.5 Figtree,sans-serif;min-height:100vh;padding:32px 16px}
+main{max-width:640px;margin:auto}h1,h2{font-family:'Bricolage Grotesque',sans-serif;letter-spacing:-.03em}h1{font-size:34px}
+.card{background:var(--s);border:1px solid var(--ln);border-radius:20px;padding:26px;margin-top:18px}[hidden]{display:none!important}
+label{display:block;font-size:13px;font-weight:600;margin:16px 0 6px}label em{font-weight:400;font-style:normal;color:var(--mu)}
+input[type=text],input[type=email],input[type=password],input[type=number],input[type=datetime-local]{width:100%;background:rgba(255,255,255,.05);border:1px solid var(--ln);color:var(--tx);padding:12px 14px;border-radius:12px;font:500 15px Figtree,sans-serif;color-scheme:dark}
+input:focus{outline:2px solid var(--pu);border-color:transparent}
+.g2{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+.sw{display:flex;align-items:center;gap:12px;font-size:16px;font-weight:600;cursor:pointer;margin:0}.sw input{width:22px;height:22px;accent-color:var(--gr)}
+.btn{border:0;border-radius:100px;padding:13px 24px;font:600 15px Figtree,sans-serif;color:#fff;cursor:pointer;background:linear-gradient(135deg,#a07bff,#6d3df0)}.btn.g{background:rgba(255,255,255,.07);border:1px solid var(--ln)}
+.row{display:flex;gap:10px;flex-wrap:wrap;margin-top:22px}.top{display:flex;justify-content:space-between;align-items:center}
+.pv{margin-top:18px;border:1px dashed var(--ln);border-radius:14px;padding:14px;font-size:14px;color:var(--mu)}.pv b{color:var(--tx)}
+.msg{margin-top:14px;font-size:14px;min-height:20px}.ok{color:var(--gr)}.er{color:#ff7a88}
+.pill{font-size:13px;font-weight:600;padding:4px 12px;border-radius:100px;background:rgba(255,255,255,.08)}.pill.on{background:rgba(61,255,160,.15);color:var(--gr)}
+</style></head><body><main>
+<h1>Panel de ofertas</h1><p style="color:var(--mu)">Lo que cambies aquí se ve en tu página en segundos.</p>
+<section class="card" id="lg"><h2>Entrar</h2>
+<label>Correo</label><input type="email" id="em" autocomplete="username"><label>Contraseña</label><input type="password" id="pw" autocomplete="current-password">
+<div class="row"><button class="btn" id="go">Entrar</button></div><div class="msg er" id="le"></div></section>
+<section class="card" id="pn" hidden>
+<div class="top"><h2>Oferta actual</h2><span class="pill" id="st">—</span></div>
+<label class="sw" style="margin-top:20px"><input type="checkbox" id="a">Oferta activa</label>
+<label>Título <em>· sale en la barra de arriba</em></label><input type="text" id="t" placeholder="Fin de semana gamer">
+<label>Texto <em>· opcional</em></label><input type="text" id="x" placeholder="20% de descuento en todos los planes">
+<div class="g2"><div><label>Termina el <em>· cuenta regresiva</em></label><input type="datetime-local" id="e"></div><div><label>Descuento % <em>· para todo</em></label><input type="number" id="o" min="0" max="90" value="20"></div></div>
+<label>Precio exacto por producto <em>· opcional, reemplaza el descuento %</em></label><div class="g2" id="pp"></div>
+<div class="pv" id="pv"></div>
+<div class="row"><button class="btn" id="sv">Guardar y publicar</button><button class="btn g" id="en">Terminar oferta ahora</button><button class="btn g" id="lo">Salir</button></div>
+<div class="msg" id="ms"></div></section></main>
+<script src="firebase-config.js"></script>
+<script type="module">
+import {initializeApp} from 'https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js';
+import {getAuth,signInWithEmailAndPassword,onAuthStateChanged,signOut} from 'https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js';
+import {getFirestore,doc,onSnapshot,setDoc} from 'https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js';
+const $=s=>document.querySelector(s),C=window.FIREBASE_CONFIG;
+const N=[['Plan Básico',15],['Plan Avanzado',20],['Plan Pro',25],['Gráficos FiveM',30]];
+$('#pp').innerHTML=N.map((n,i)=>`<div><input type="number" min="0" step="0.01" id="p${i}" placeholder="${n[0]} (normal $${n[1]})"></div>`).join('');
+if(!C||!C.apiKey||C.apiKey.startsWith('PEGA')){$('#le').textContent='Falta pegar tu configuración de Firebase en firebase-config.js';$('#go').disabled=true}
+else{
+const app=initializeApp(C),auth=getAuth(app),db=getFirestore(app),ref=doc(db,'config','oferta');let un;
+const say=(m,c)=>{$('#ms').textContent=m;$('#ms').className='msg '+c};
+$('#go').onclick=()=>signInWithEmailAndPassword(auth,$('#em').value.trim(),$('#pw').value).catch(()=>$('#le').textContent='Correo o contraseña incorrectos');
+$('#lo').onclick=()=>signOut(auth);
+const fill=d=>{$('#a').checked=!!d.active;$('#t').value=d.title||'';$('#x').value=d.text||'';$('#o').value=d.off??0;
+ if(d.ends){const t=new Date(d.ends);$('#e').value=new Date(t-t.getTimezoneOffset()*6e4).toISOString().slice(0,16)}else $('#e').value='';
+ N.forEach((n,i)=>$('#p'+i).value=d.prices&&d.prices[n[0]]!=null?d.prices[n[0]]:'');
+ const on=d.active&&(!d.ends||new Date(d.ends)>new Date());$('#st').textContent=on?'Activa':'Apagada';$('#st').className='pill'+(on?' on':'');pv()};
+const pv=()=>{const o=+$('#o').value||0;$('#pv').innerHTML='<b>Vista previa:</b> '+($('#t').value||'(sin título)')+' · '+($('#x').value||'')+'<br>'+N.map((n,i)=>{const p=$('#p'+i).value,v=p!==''?+p:Math.round(n[1]*(100-o))/100;return n[0]+': '+(v<n[1]?'<s>$'+n[1]+'</s> <b>$'+v+'</b>':'$'+n[1])}).join(' · ')};
+document.querySelectorAll('input').forEach(i=>i.addEventListener('input',pv));
+$('#sv').onclick=async()=>{if($('#a').checked&&!$('#t').value.trim())return say('Ponle un título a la oferta.','er');
+ const prices={};N.forEach((n,i)=>{const v=$('#p'+i).value;if(v!=='')prices[n[0]]=+v});
+ try{await setDoc(ref,{active:$('#a').checked,title:$('#t').value.trim(),text:$('#x').value.trim(),ends:$('#e').value?new Date($('#e').value).toISOString():'',off:+$('#o').value||0,prices});say('Publicado. Tus visitantes lo ven en segundos.','ok')}catch(e){say('No se pudo guardar. Revisa las reglas de Firestore y que tu correo sea el autorizado.','er')}};
+$('#en').onclick=async()=>{try{await setDoc(ref,{active:false},{merge:true});say('Oferta terminada.','ok')}catch(e){say('No se pudo guardar.','er')}};
+onAuthStateChanged(auth,u=>{$('#lg').hidden=!!u;$('#pn').hidden=!u;if(un)un();if(u)un=onSnapshot(ref,d=>d.exists()?fill(d.data()):pv())});
+}
+</script></body></html>
